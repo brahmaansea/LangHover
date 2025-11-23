@@ -11,7 +11,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["assets/index.js"],
-      "css": ["assets/index.css"]
+     
     }
   ],
   "action": {
