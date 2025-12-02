@@ -7,16 +7,29 @@ interface TranslationCardProps {
   style: React.CSSProperties;
 }
 
-// 1. Define all the tenses we want to show and their display labels
+// 1. Define the order of tabs (Present -> Passato Prossimo -> Future -> Others)
 const TENSE_MAP = [
   { key: 'present', label: 'Present' },
-  { key: 'imperfect', label: 'Imperfect' },
+  { key: 'passatoProssimo', label: 'Passato Pros.' }, // New Tab
   { key: 'future', label: 'Future' },
-  { key: 'pastRemote', label: 'Past Rem.' },     // Passato Remoto
+  { key: 'imperfect', label: 'Imperfect' },
+  { key: 'pastRemote', label: 'Past Rem.' },
   { key: 'conditional', label: 'Conditional' },
   { key: 'subjunctivePresent', label: 'Subj. Pres.' },
   { key: 'subjunctiveImperfect', label: 'Subj. Imp.' },
 ] as const;
+
+// 2. Hardcoded conjugations for auxiliaries (to build compound tenses)
+const AUX_CONJUGATIONS: Record<string, ConjugationSet> = {
+  avere: { 
+    io: 'ho', tu: 'hai', lui_lei: 'ha', 
+    noi: 'abbiamo', voi: 'avete', loro: 'hanno' 
+  },
+  essere: { 
+    io: 'sono', tu: 'sei', lui_lei: 'è', 
+    noi: 'siamo', voi: 'siete', loro: 'sono' 
+  }
+};
 
 export default function TranslationCard({ word, entry, style }: TranslationCardProps) {
   // Default to Present tense
@@ -39,7 +52,8 @@ export default function TranslationCard({ word, entry, style }: TranslationCardP
   const ConjugationItem = ({ label, value }: { label: string, value: string }) => {
     // Safety check: sometimes data might be missing a field
     const displayValue = value || '-';
-    const isMatch = displayValue.toLowerCase() === cleanWord;
+    // Check match against the full value (e.g. "ho mangiato") or just the main word
+    const isMatch = displayValue.toLowerCase() === cleanWord || displayValue.toLowerCase().includes(cleanWord);
     
     return (
       <div className="flex flex-col group cursor-default">
@@ -53,9 +67,38 @@ export default function TranslationCard({ word, entry, style }: TranslationCardP
     );
   };
 
-  // Get the data for the currently selected tense
-  // We use "key as keyof..." to tell TypeScript we are sure this key exists in the object
-  const currentConjugation = entry.tenses[activeTab as keyof typeof entry.tenses] as ConjugationSet;
+  // 3. LOGIC TO DETERMINE CONJUGATION DATA
+  let currentConjugation: ConjugationSet | null = null;
+
+  if (activeTab === 'passatoProssimo') {
+    // DYNAMICALLY BUILD PASSATO PROSSIMO
+    // 1. Identify auxiliary (default to avere if missing)
+    let auxKey = 'avere';
+    if (entry.auxiliary && entry.auxiliary.toLowerCase().includes('essere')) {
+      auxKey = 'essere';
+    }
+
+    // 2. Get the aux conjugation (ho, hai...)
+    const auxSet = AUX_CONJUGATIONS[auxKey];
+    const participle = entry.participle || '...';
+
+    // 3. Combine them: "ho" + "mangiato"
+    if (auxSet) {
+      currentConjugation = {
+        io: `${auxSet.io} ${participle}`,
+        tu: `${auxSet.tu} ${participle}`,
+        lui_lei: `${auxSet.lui_lei} ${participle}`,
+        noi: `${auxSet.noi} ${participle}`,
+        voi: `${auxSet.voi} ${participle}`,
+        loro: `${auxSet.loro} ${participle}`,
+      };
+    }
+  } else {
+    // STANDARD LOOKUP for simple tenses stored in the CSV
+    // We cast to "keyof typeof" because we know our TENSE_MAP keys match the Type keys (mostly)
+    // We ignore 'passatoProssimo' here because we handled it above
+    currentConjugation = entry.tenses[activeTab as keyof typeof entry.tenses] as ConjugationSet;
+  }
 
   return (
     <div 
