@@ -2,34 +2,46 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import ExtensionOverlay from './components/ExtensionOverlay';
-import './index.css'; 
 
 const rootElement = document.getElementById('root');
 
 if (rootElement) {
+  // 1. DEV MODE (npm run dev)
+  // Just render normally for testing
+  import('./index.css'); 
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
       <App />
     </React.StrictMode>
   );
 } else {
-  const newRoot = document.createElement('div');
-  newRoot.id = 'langhover-extension-root';
+  // 2. EXTENSION MODE (Real Website)
   
-  // FIXED positioning keeps it out of the document flow
-  // 0 width/height ensures it doesn't trigger scrollbars
-  newRoot.style.position = 'fixed';
-  newRoot.style.top = '0';
-  newRoot.style.left = '0';
-  newRoot.style.width = '0';
-  newRoot.style.height = '0';
-  newRoot.style.overflow = 'visible'; // Let the popup spill out
-  newRoot.style.zIndex = '2147483647';
-  newRoot.style.pointerEvents = 'none'; // Clicks pass through
-  
-  document.body.appendChild(newRoot);
+  // Create the "Host" element (This sits in the real website)
+  const host = document.createElement('div');
+  host.id = 'langhover-extension-host';
+  // Reset the host so it doesn't affect the page layout
+  host.style.display = 'block';
+  host.style.all = 'initial'; 
+  document.body.appendChild(host);
 
-  ReactDOM.createRoot(newRoot).render(
+  // Create the "Shadow Root" (The invisible wall)
+  const shadow = host.attachShadow({ mode: 'open' });
+
+  // Inject our CSS *inside* the Shadow DOM
+  // We use chrome.runtime.getURL to find the file in the extension folder
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = chrome.runtime.getURL('assets/index.css');
+  shadow.appendChild(link);
+
+  // Create the mount point for React INSIDE the shadow
+  const mountPoint = document.createElement('div');
+  mountPoint.id = 'langhover-shadow-root';
+  shadow.appendChild(mountPoint);
+
+  // Render the App
+  ReactDOM.createRoot(mountPoint).render(
     <React.StrictMode>
       <ExtensionOverlay />
     </React.StrictMode>

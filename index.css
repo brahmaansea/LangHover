@@ -1,63 +1,27 @@
-/* 1. IMPORT TAILWIND (Without Preflight/Global Reset) */
-@import "tailwindcss/theme";
-@import "tailwindcss/utilities";
+@import "tailwindcss";
 
-/* 2. THE NUCLEAR RESET (Isolation Layer)
-   'all: initial' tells the browser: "Forget everything the website told you 
-   about styling. Reset this element to a blank slate."
-*/
-#langhover-extension-root {
-  all: initial; /* <--- The magic line */
-  
-  /* Since 'initial' makes it inline, we must re-declare basic layout rules */
-  display: block;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
-  overflow: visible;
-  z-index: 2147483647;
-  pointer-events: none;
-
-  /* Re-establish standard font settings so 'em' units work */
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 16px; /* Locks the base size so 1rem = 16px usually */
+/* 1. RESET DEFAULTS INSIDE SHADOW DOM */
+:host {
+  font-family: ui-sans-serif, system-ui, sans-serif;
   line-height: 1.5;
-  color: #0f172a; /* Slate 900 */
-  text-align: left;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* 3. RESET ALL CHILDREN
-   Ensures buttons, inputs, and divs inside your app behave normally
+/* 2. FORCE PIXEL SIZES (Fixes the "Shrinking Font" issue)
+   Tailwind uses 'rem' by default. If a website sets root font to 10px,
+   your text becomes tiny. This overrides that.
 */
-#langhover-extension-root * {
-  box-sizing: border-box;
-}
-
-/* Fix for buttons looking weird on some sites */
-#langhover-extension-root button {
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin: 0;
-  font: inherit;
-  color: inherit;
-  text-transform: none;
-  appearance: button;
-}
-
-/* Enable clicking on your card */
-#langhover-extension-root > div {
-  pointer-events: auto;
-}
-
-/* Hide scrollbars for the tabs */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+@layer utilities {
+  .text-xs { font-size: 12px; }
+  .text-sm { font-size: 14px; }
+  .text-base { font-size: 16px; }
+  .text-lg { font-size: 18px; }
+  .text-xl { font-size: 20px; }
+  .text-2xl { font-size: 24px; }
+  
+  /* Fix spacing scaling issues if needed */
+  .p-1 { padding: 4px; }
+  .p-2 { padding: 8px; }
+  .p-3 { padding: 12px; }
+  .p-4 { padding: 16px; }
 }
